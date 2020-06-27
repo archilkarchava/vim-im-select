@@ -59,6 +59,17 @@ if !exists('g:im_select_get_im_cmd') || !exists('g:ImSelectSetImCmd')
             if !exists('g:im_select_default')
                 let g:im_select_default = '1'
             endif
+        elseif $GTK_IM_MODULE == 'fcitx5' || $QT_IM_MODULE == 'fcitx5'
+            let g:im_select_get_im_cmd = ['fcitx5-remote']
+            let g:ImSelectSetImCmd = {
+              \ key ->
+              \ key == 1 ? ['fcitx5-remote', '-c'] :
+              \ key == 2 ? ['fcitx5-remote', '-o'] :
+              \ execute("throw 'invalid im key'")
+              \ }
+            if !exists('g:im_select_default')
+                let g:im_select_default = '1'
+            endif
         elseif match($XDG_CURRENT_DESKTOP, '\cgnome') >= 0
             if $GTK_IM_MODULE == 'ibus'
                 let g:im_select_get_im_cmd = [
@@ -98,6 +109,17 @@ if !exists('g:im_select_get_im_cmd') || !exists('g:ImSelectSetImCmd')
                 if !exists('g:im_select_default')
                     let g:im_select_default = '1'
                 endif
+            elseif $GTK_IM_MODULE == 'fcitx5' || $QT_IM_MODULE == 'fcitx5'
+                let g:im_select_get_im_cmd = ['fcitx5-remote']
+                let g:ImSelectSetImCmd = {
+                            \ key ->
+                            \ key == 1 ? ['fcitx5-remote', '-c'] :
+                            \ key == 2 ? ['fcitx5-remote', '-o'] :
+                            \ execute("throw 'invalid im key'")
+                            \ }
+                if !exists('g:im_select_default')
+                    let g:im_select_default = '1'
+                endif
             endif
         endif
     endif
@@ -109,6 +131,7 @@ endif
 
 let g:ImSelectGetImCallback = get(g:, 'ImSelectGetImCallback', function('im_select#default_get_im_callback'))
 let g:im_select_switch_timeout = get(g:, 'im_select_switch_timeout', 50)
+let g:im_select_enable_focus_events = get(g:, 'im_select_enable_focus_events', 1)
 
 let g:im_select_prev_im = ''
 
@@ -117,8 +140,10 @@ function! im_select#enable() abort
         autocmd!
         autocmd InsertEnter * call im_select#on_insert_enter()
         autocmd InsertLeave * call im_select#on_insert_leave()
-        autocmd FocusGained * call im_select#on_focus_gained()
-        autocmd FocusLost * call im_select#on_focus_lost()
+        if g:im_select_enable_focus_events
+            autocmd FocusGained * call im_select#on_focus_gained()
+            autocmd FocusLost * call im_select#on_focus_lost()
+        endif
         autocmd VimLeavePre * call im_select#on_vim_leave_pre()
     augroup END
 endfunction
@@ -129,6 +154,8 @@ endfunction
 
 command! -nargs=0 ImSelectEnable call im_select#enable()
 command! -nargs=0 ImSelectDisable call im_select#disable()
+
+call im_select#enable()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
